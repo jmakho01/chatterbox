@@ -188,6 +188,8 @@ public class ChatterboxClient {
      */
     public void authenticate() throws IOException, IllegalArgumentException {
         throw new UnsupportedOperationException("Authenticate not yet implemented. Implement authenticate() and remove this exception!");
+        // Hint: use the username/password instance variables
+        // DO NOT READ FROM userInput
     }
 
     /**
