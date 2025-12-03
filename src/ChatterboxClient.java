@@ -1,6 +1,10 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 /**
  * A simple command-line chat client for the Chatterbox server.
@@ -18,7 +22,7 @@ import java.io.OutputStream;
  *
  * Important design constraint:
  * - Do NOT read/write directly from System.in/System.out inside helper methods.
- *   Always use userInput/userOutput fields so the client is testable.
+ *   Always use userInput/userOutput instead.
  */
 public class ChatterboxClient {
 
@@ -28,12 +32,12 @@ public class ChatterboxClient {
     private String password;
 
     // Streams for user I/O
-    private InputStream userInput;
+    private Scanner userInput;
     private OutputStream userOutput;
 
-    // Streams for server I/O (set up in connect())
-    private InputStream serverInput;
-    private OutputStream serverOutput;
+    // Readers/Writers for server I/O (set up in connect())
+    private BufferedReader serverReader;
+    private BufferedWriter serverWriter;
 
     /**
      * Program entry.
@@ -50,59 +54,55 @@ public class ChatterboxClient {
         ChatterboxOptions options = null;
         System.out.println("Parsing options...");
         try {
-            options = parseArgs(args);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Error parsing arguments");
-            System.err.println(e.getMessage());
-            System.err.println("Usage: javac src/*.java && java -cp src ChatterboxClient HOST PORT USERNAME PASSWORD");
-            System.exit(1);
-        } catch (UnsupportedOperationException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
+            try {
+                options = parseArgs(args);
+            } catch (IllegalArgumentException e) {
+                System.err.println("Error parsing arguments");
+                System.err.println(e.getMessage());
+                System.err.println("Usage: javac src/*.java && java -cp src ChatterboxClient HOST PORT USERNAME PASSWORD");
+                System.exit(1);
+            } 
+            System.out.println("Read options: " + options.toString());
+
+            System.out.println("Creating client...");
+            
+            ChatterboxClient client = new ChatterboxClient(options, System.in, System.out);
+            System.out.println("Client created: " + client.toString());
+
+            System.out.println("Connecting to server...");
+            try {
+                client.connect();
+            } catch(IOException e) {
+                System.err.println("Failed to connect to server");
+                System.err.println(e.getMessage());
+                System.exit(1);
+            } 
+            System.out.println("Connected to server");
+
+            System.out.println("Authenticating...");
+            try {
+                client.authenticate();
+            } catch (IOException e) {
+                System.err.println("Error while attempting to authenticate");
+                System.err.println(e.getMessage());
+                System.exit(1);
+            } catch (IllegalArgumentException e) {
+                System.err.println("Failed authentication");
+                System.err.println(e.getMessage());
+                System.exit(1);
+            } 
+            System.out.println("Finished authentication");
+
+            System.out.println("Beginning chat streaming");
+            try {
+                client.streamChat();
+            } catch (IOException e) {
+                System.err.println("Error streaming chats");
+                System.err.println(e.getMessage());
+                System.exit(1);
+            } 
         }
-        System.out.println("Read options: " + options.toString());
-
-        System.out.println("Creating client...");
-        ChatterboxClient client = new ChatterboxClient(options, System.in, System.out);
-        System.out.println("Client created: " + client.toString());
-
-        System.out.println("Connecting to server...");
-        try {
-            client.connect();
-        } catch(IOException e) {
-            System.err.println("Failed to connect to server");
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (UnsupportedOperationException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-        }
-        System.out.println("Connected to server");
-
-        System.out.println("Authenticating...");
-        try {
-            client.authenticate();
-        } catch (IOException e) {
-            System.err.println("Error while attempting to authenticate");
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Failed authentication");
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (UnsupportedOperationException e) {
-            System.err.println(e.getMessage());
-        }
-        System.out.println("Finished authentication");
-
-        System.out.println("Beginning chat streaming");
-        try {
-            client.streamChat();
-        } catch (IOException e) {
-            System.err.println("Error streaming chats");
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (UnsupportedOperationException e) {
+        catch (UnsupportedOperationException e) {
             System.err.println(e.getMessage());
         }
     }
@@ -111,10 +111,10 @@ public class ChatterboxClient {
      * Parse command-line arguments into a ChatterboxOptions object.
      *
      * Required argument order:
-     *   args[0] = HOST
-     *   args[1] = PORT
-     *   args[2] = USERNAME
-     *   args[3] = PASSWORD
+     *   HOST
+     *   PORT
+     *   USERNAME
+     *   PASSWORD
      *
      * Rules:
      * - If args.length != 4, throw IllegalArgumentException.
@@ -143,9 +143,10 @@ public class ChatterboxClient {
      * @param userOutput stream to print data to the user
      */
     public ChatterboxClient(ChatterboxOptions options, InputStream userInput, OutputStream userOutput) {
-        this.userInput = userInput;
+        this.userInput = new Scanner(userInput, StandardCharsets.UTF_8);
         this.userOutput = userOutput;
 
+        throw new UnsupportedOperationException("Constructor not yet implemented. Implement ChatterboxClient constructor and remove this exception");
         // TODO: copy options.getHost(), getPort(), getUsername(), getPassword() into fields
     }
 
@@ -154,10 +155,10 @@ public class ChatterboxClient {
      *
      * Responsibilities:
      * - Create a Socket to host:port.
-     * - Populate serverInput and serverOutput from that socket.
+     * - Populate the serverReader and serverWriter from that socket
      * - If connection fails, let IOException propagate.
      *
-     * After this method finishes successfully, serverInput/serverOutput
+     * After this method finishes successfully, serverReader/serverWriter
      * must be non-null and ready for I/O.
      *
      * @throws IOException if the socket cannot be opened
@@ -165,7 +166,8 @@ public class ChatterboxClient {
     public void connect() throws IOException {
         throw new UnsupportedOperationException("Connect not yet implemented. Implement connect() and remove this exception!");
 
-        // Make sure to have this.serverInput and this.serverOutput set by the end of this method!
+        // Make sure to have this.serverReader and this.serverWriter set by the end of this method!
+        // hint: get the streams from the sockets, use those to create the InputStreamReader/OutputStreamWriter and the BufferedReader/BufferedWriter
     }
 
     /**
@@ -177,7 +179,7 @@ public class ChatterboxClient {
      * - Send ONE LINE containing:
      *      username + " " + password + "\n"
      *   using serverOutput.
-     * - Read ONE response line from serverInput.
+     * - Read ONE response line from serverReader.
      * - If the response indicates failure, throw IllegalArgumentException
      *   with that response text.
      * - If success, print the welcome line(s) to userOutput and return.
@@ -190,12 +192,12 @@ public class ChatterboxClient {
      */
     public void authenticate() throws IOException, IllegalArgumentException {
         throw new UnsupportedOperationException("Authenticate not yet implemented. Implement authenticate() and remove this exception!");
-        // Hint: use the username/password instance variables
-        // DO NOT READ FROM userInput
+        // Hint: use the username/password instance variables, DO NOT READ FROM userInput
+        // send messages using serverWriter (don't forget to flush!)
     }
 
     /**
-     * Start full-duplex chat streaming.
+     * Start full-duplex chat streaming. SEE INSTRUCTIONS FOR HOW TO DO THIS PART BY PART
      *
      * Responsibilities:
      * - Run printIncomingChats() and sendOutgoingChats() in separate threads.
@@ -225,7 +227,7 @@ public class ChatterboxClient {
      *   print a message to userOutput and exit.
      */
     public void printIncomingChats() {
-        // Listen on serverInput
+        // Listen on serverReader
         // Write to userOutput, NOT System.out
     }
 
@@ -233,8 +235,6 @@ public class ChatterboxClient {
      * Continuously read user-typed messages and send them to the server.
      *
      * Responsibilities:
-     * - Make a Scanner on userInput (NOT System.in).
-     * - Wrap serverOutput in a BufferedWriter (UTF-8).
      * - Loop forever:
      *      if scanner has a next line, read it
      *      write it to serverOutput + newline + flush
@@ -242,10 +242,9 @@ public class ChatterboxClient {
      * Notes:
      * - If writing fails (IOException), the connection is gone:
      *   print a message to userOutput and exit.
-     * - Scanner blocks on user input; that's fine for this assignment.
      */
     public void sendOutgoingChats() {
-        // Use a scanner to read from userInput, NOT System.in directly
+        // Use the userInput to read, NOT System.in directly
         // loop forever reading user input
         // write to serverOutput
     }
