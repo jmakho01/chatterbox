@@ -9,8 +9,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-import javax.imageio.IIOException;
-
 /**
  * A simple command-line chat client for the Chatterbox server.
  *
@@ -205,7 +203,7 @@ public class ChatterboxClient {
      * Assumption:
      * - The server closes the connection after a failed auth.
      *
-     * @throws IOException for network error(s)
+     * @throws IOException for network errors
      * @throws IllegalArgumentException for bad credentials / server rejection
      */
     public void authenticate() throws IOException, IllegalArgumentException {
