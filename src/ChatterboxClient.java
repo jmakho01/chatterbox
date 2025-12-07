@@ -125,9 +125,10 @@ public class ChatterboxClient {
      * @throws IllegalArgumentException on any bad/missing input
      */
     public static ChatterboxOptions parseArgs(String[] args) throws IllegalArgumentException {
-        // TODO: read args in the required order and return new ChatterboxOptions(host, port, username, password)
-        // Remove this exception
-        throw new UnsupportedOperationException("Argument parsing not yet implemented. Implement parseArgs and remove this exception");
+        if (args.length != 4) throw new IllegalArgumentException("Argument length invalid");
+        int portCheck = Integer.parseInt(args[1]);
+        if (portCheck < 1 || portCheck > 65535) throw new IllegalArgumentException("Port number invalid");
+        return new ChatterboxOptions(args[0], portCheck, args[2], args[3]);
     }
 
     /**
